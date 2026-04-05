@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import { FileText, Download } from 'lucide-react';
 import { useResume } from './context/ResumeContext';
 import { LivePreview } from './components/LivePreview';
 import { ResumeForm } from './components/ResumeForm';
+import { Home } from './components/Home';
+import { ResumeImport } from './components/ResumeImport';
+import { Auth } from './components/Auth';
+import { Dashboard } from './components/Dashboard';
+import axios from 'axios';
+
+axios.defaults.withCredentials = true;
 
 const MainApp = () => {
   const { data, clearSavedData } = useResume();
@@ -12,14 +19,18 @@ const MainApp = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      // Directly generate PDF from data without database dependency
+      if (data.id) {
+        // Automatically save on export if logged in and managing a resume
+        await axios.post('http://localhost:5000/api/resumes', data);
+      }
+      
       const response = await fetch('http://localhost:5000/api/resumes/export-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Failed to generate PDF');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -46,14 +57,17 @@ const MainApp = () => {
             <FileText size={24} className="text-blue-600" style={{ color: 'var(--primary)' }} />
             ResuOne
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleExport}
-            disabled={isExporting}
-          >
-            <Download size={18} />
-            {isExporting ? 'Exporting...' : 'Export PDF'}
-          </button>
+          <div className="flex items-center gap-3">
+            <ResumeImport />
+            <button
+              className="btn btn-primary"
+              onClick={handleExport}
+              disabled={isExporting}
+            >
+              <Download size={18} />
+              {isExporting ? 'Exporting...' : 'Export PDF'}
+            </button>
+          </div>
         </header>
         <div className="form-area">
           <ResumeForm />
@@ -80,7 +94,7 @@ const RenderRoute = () => {
         const res = await fetch(`http://localhost:5000/api/resumes/${id}`);
         if (!res.ok) throw new Error('Failed to fetch resume');
         const dbData = await res.json();
-        
+
         // Map DB snake_case columns back to frontend camelCase
         const mappedData = {
           personalDetails: dbData.personal_details || {},
@@ -91,14 +105,14 @@ const RenderRoute = () => {
           experience: dbData.experience || [],
           extraCurricular: dbData.extra_curricular || []
         };
-        
+
         setData(mappedData);
       } catch (err) {
         console.error(err);
         setError('Could not load resume');
       }
     };
-    
+
     if (id) fetchResume();
   }, [id]);
 
@@ -116,7 +130,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MainApp />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/resume" element={<MainApp />} />
         <Route path="/render/:id" element={<RenderRoute />} />
       </Routes>
     </Router>

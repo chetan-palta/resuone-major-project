@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
@@ -9,13 +13,22 @@
   --error: #ef4444;
   --success: #22c55e;
   --focus-ring: rgba(37, 99, 235, 0.3);
-  
+
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: 'Times New Roman', Times, serif;
+}
+
+.dark {
+  --bg-color: #020617;
+  --surface-color: #0f172a;
+  --border-color: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --right-panel-bg: linear-gradient(135deg, #020617, #0f172a);
 }
 
 * {
@@ -52,7 +65,7 @@ body {
 
 .right-panel {
   flex: 1;
-  background: #e2e8f0;
+  background: var(--right-panel-bg, linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%));
   padding: 2rem;
   overflow-y: auto;
   display: flex;
@@ -64,13 +77,16 @@ body {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
@@ -272,35 +288,40 @@ textarea.input-field {
   display: flex;
   gap: 1rem;
 }
-.input-row > .input-group {
+
+.input-row>.input-group {
   flex: 1;
 }
 
 /* A4 Print Preview Strict Styling */
 .a4-container {
-  width: 210mm; /* A4 Width */
-  height: 297mm; /* A4 Height */
+  width: 210mm;
+  /* A4 Width */
+  height: 297mm;
+  /* A4 Height */
   background: white;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   position: relative;
-  overflow: hidden; /* Enforce 1 page visually in app */
+  overflow: hidden;
+  /* Enforce 1 page visually in app */
 }
 
 /* The actual printable area */
 .resume-paper {
-  padding: 15mm 15mm;
+  padding: 10mm 15mm;
   width: 100%;
   height: 100%;
   font-family: var(--font-serif);
   color: black;
-  font-size: 11pt; /* Strict font size, 11pt is optimal for reading */
+  font-size: 11pt;
+  /* Strict font size, 11pt is optimal for reading */
   line-height: 1.4;
   box-sizing: border-box;
 }
 
 .resume-header {
   text-align: center;
-  margin-bottom: 5mm;
+  margin-bottom: 4mm;
 }
 
 .resume-name {
@@ -309,7 +330,8 @@ textarea.input-field {
   font-weight: 700;
   margin-bottom: 2mm;
   text-transform: uppercase;
-  color: #0b2239; /* Slight premium dark blue for name to match user's image styling */
+  color: #0b2239;
+  /* Slight premium dark blue for name to match user's image styling */
 }
 
 .resume-contact {
@@ -328,12 +350,13 @@ textarea.input-field {
 
 .resume-divider {
   border: 0;
-  border-top: 1px solid #777; /* Standard thin line */
+  border-top: 1px solid #777;
+  /* Standard thin line */
   margin: 3mm 0;
 }
 
 .resume-section {
-  margin-bottom: 4mm;
+  margin-bottom: 3mm;
 }
 
 .resume-section-title {
@@ -341,18 +364,18 @@ textarea.input-field {
   font-weight: bold;
   text-transform: uppercase;
   border-bottom: 1px solid black;
-  margin-bottom: 3mm;
-  padding-bottom: 2px;
+  margin-bottom: 2mm;
+  padding-bottom: 1px;
   color: #000;
 }
 
 .resume-item {
-  margin-bottom: 3mm;
+  margin-bottom: 2mm;
 }
 
 .resume-summary {
   text-align: justify;
-  margin-bottom: 4mm;
+  margin-bottom: 3mm;
 }
 
 .resume-item-header {
@@ -380,16 +403,20 @@ textarea.input-field {
 .resume-list {
   padding-left: 6mm;
   margin-top: 2px;
-  list-style-type: square;
+  list-style-type: circle;
 }
 
 .resume-list li {
   margin-bottom: 2px;
   text-align: justify;
+  font-size: 10.5pt;
 }
 
 .resume-skills-group {
   margin-bottom: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
 }
 
 .resume-skill-label {

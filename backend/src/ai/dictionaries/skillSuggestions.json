@@ -1,0 +1,52 @@
+{
+  "backend developer": {
+    "languages": ["Python", "Java", "Go", "C++", "C#", "Node.js", "Ruby", "PHP", "Rust", "SQL"],
+    "tools": ["Docker", "Kubernetes", "Git", "GitHub", "AWS", "Azure", "GCP", "Jenkins", "Redis", "Kafka", "RabbitMQ", "Linux", "Nginx", "Apache"],
+    "databases": ["MySQL", "PostgreSQL", "MongoDB", "Oracle", "SQL Server", "Cassandra", "DynamoDB", "Redis", "Elasticsearch"]
+  },
+  "frontend developer": {
+    "languages": ["JavaScript", "TypeScript", "HTML5", "CSS3", "SASS", "LESS"],
+    "tools": ["React", "Angular", "Vue.js", "Next.js", "Webpack", "Vite", "Babel", "Jest", "Cypress", "npm", "Yarn", "Git", "Figma", "Tailwind CSS", "Redux", "GraphQL"],
+    "databases": ["Firebase", "Supabase", "IndexedDB", "Local Storage"]
+  },
+  "full stack developer": {
+    "languages": ["JavaScript", "TypeScript", "Python", "Java", "SQL", "HTML/CSS"],
+    "tools": ["React", "Node.js", "Express", "Docker", "Git", "AWS", "Next.js", "GraphQL", "REST APIs", "Redis", "Nginx"],
+    "databases": ["MySQL", "PostgreSQL", "MongoDB", "Firebase"]
+  },
+  "data scientist": {
+    "languages": ["Python", "R", "SQL", "Julia", "Scala", "C++"],
+    "tools": ["Pandas", "NumPy", "TensorFlow", "PyTorch", "Scikit-Learn", "Keras", "Jupyter Notebook", "Apache Spark", "Hadoop", "Tableau", "Power BI", "Git"],
+    "databases": ["MySQL", "PostgreSQL", "NoSQL", "Snowflake", "BigQuery", "Redshift", "MongoDB"]
+  },
+  "machine learning engineer": {
+    "languages": ["Python", "C++", "Java", "R", "Scala", "SQL"],
+    "tools": ["TensorFlow", "PyTorch", "Keras", "Scikit-Learn", "OpenCV", "CUDA", "Docker", "Kubernetes", "AWS SageMaker", "MLflow", "Git"],
+    "databases": ["PostgreSQL", "MongoDB", "Cassandra", "HDFS"]
+  },
+  "devops engineer": {
+    "languages": ["Python", "Bash", "Shell", "Go", "Ruby", "YAML", "Groovy"],
+    "tools": ["Docker", "Kubernetes", "Jenkins", "GitLab CI", "GitHub Actions", "Terraform", "Ansible", "Chef", "Puppet", "AWS", "Azure", "GCP", "Linux", "Prometheus", "Grafana", "ELK Stack"],
+    "databases": ["MySQL", "PostgreSQL", "Redis", "MongoDB"]
+  },
+  "mobile developer": {
+    "languages": ["Swift", "Kotlin", "Java", "Objective-C", "Dart", "JavaScript", "TypeScript", "C#"],
+    "tools": ["iOS SDK", "Android SDK", "React Native", "Flutter", "Xamarin", "Xcode", "Android Studio", "Git", "CocoaPods", "Gradle", "Fastlane"],
+    "databases": ["SQLite", "CoreData", "Realm", "Firebase", "Room"]
+  },
+  "software engineer": {
+    "languages": ["Java", "Python", "C++", "C#", "JavaScript", "Go", "SQL"],
+    "tools": ["Git", "Docker", "Agile", "Scrum", "JIRA", "Linux", "AWS", "REST APIs", "CI/CD", "JUnit", "Selenium"],
+    "databases": ["MySQL", "PostgreSQL", "Oracle", "MongoDB", "SQL Server"]
+  },
+  "cloud engineer": {
+     "languages": ["Python", "Bash", "Go", "Java", "JavaScript", "PowerShell"],
+     "tools": ["AWS", "Azure", "Google Cloud Platform", "Terraform", "Docker", "Kubernetes", "Ansible", "CloudFormation", "Linux", "Git", "Jenkins"],
+     "databases": ["DynamoDB", "RDS", "CosmosDB", "Aurora", "Redshift"]
+  },
+  "cybersecurity analyst": {
+     "languages": ["Python", "C", "C++", "Assembly", "Bash", "PowerShell", "SQL"],
+     "tools": ["Wireshark", "Metasploit", "Nmap", "Burp Suite", "Splunk", "Snort", "Linux", "Kali Linux", "SIEM", "IDS/IPS", "Firewalls"],
+     "databases": ["MySQL", "SQL Server"]
+  }
+}

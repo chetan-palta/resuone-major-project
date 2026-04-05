@@ -13,7 +13,24 @@ export const getResumeById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Resume not found' });
     }
     
-    res.json(rows[0]);
+    // Map traditional structure or single resume_data column
+    const dbData = rows[0];
+    if (dbData.resume_data) {
+      return res.json({ id: dbData.id, ...dbData.resume_data });
+    }
+    
+    // Fallback mapping for old data
+    const resumeData = {
+      id: dbData.id,
+      personalDetails: dbData.personal_details || {},
+      summary: dbData.summary || '',
+      education: dbData.education || [],
+      skills: dbData.skills || [],
+      projects: dbData.projects || [],
+      experience: dbData.experience || [],
+      extraCurricular: dbData.extra_curricular || []
+    };
+    res.json(resumeData);
   } catch (error) {
     console.error('Fetch resume error:', error);
     res.status(500).json({ error: 'Internal server error while fetching resume', details: error instanceof Error ? error.message : String(error) });
@@ -37,38 +54,46 @@ export const analyzeText = (req: Request, res: Response) => {
 export const submitResume = async (req: Request, res: Response) => {
   try {
     const data = req.body;
+    const authReq = req as any;
+    const userId = authReq.user?.id;
     
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
     // Server-side validation
     if (data.summary && data.summary.split(/\s+/).filter(Boolean).length > 70) {
       return res.status(400).json({ error: 'Summary exceeds 70 words limit' });
     }
-    if (data.projects && data.projects.some((p: any) => p.description && p.description.split(/\s+/).filter(Boolean).length > 30)) {
-      return res.status(400).json({ error: 'Project description exceeds 30 words limit' });
+    if (data.projects && data.projects.length > 5) {
+      return res.status(400).json({ error: 'Maximum 5 projects allowed' });
     }
-    if (data.projects && data.projects.length > 4) {
-      return res.status(400).json({ error: 'Maximum 4 projects allowed' });
+
+    // Determine if updating or creating
+    let resumeId = data.id;
+    if (resumeId) {
+      const [existing]: any = await pool.query('SELECT id FROM resumes WHERE id = ? AND user_id = ?', [resumeId, userId]);
+      if (existing.length === 0) {
+        return res.status(403).json({ error: 'Not authorized to update this resume or resume not found' });
+      }
+      
+      await pool.query(
+        'UPDATE resumes SET resume_data = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(data), resumeId]
+      );
+    } else {
+      // Check limit for new resume
+      const [userResumes]: any = await pool.query('SELECT COUNT(*) as count FROM resumes WHERE user_id = ?', [userId]);
+      if (userResumes[0].count >= 5) {
+        return res.status(400).json({ error: 'Maximum 5 resumes allowed.' });
+      }
+
+      resumeId = randomUUID();
+      await pool.query(
+        'INSERT INTO resumes (id, user_id, resume_data) VALUES (?, ?, ?)',
+        [resumeId, userId, JSON.stringify(data)]
+      );
     }
-    // other limits can be enforced similarly
-    
-    const id = randomUUID();
-    const { personalDetails, summary, education, skills, projects, experience, extraCurricular } = data;
 
-    const [result] = await pool.query(
-      `INSERT INTO resumes (id, personal_details, summary, education, skills, projects, experience, extra_curricular) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        id, 
-        JSON.stringify(personalDetails || {}), 
-        summary || '', 
-        JSON.stringify(education || []), 
-        JSON.stringify(skills || []), 
-        JSON.stringify(projects || []), 
-        JSON.stringify(experience || []), 
-        JSON.stringify(extraCurricular || [])
-      ]
-    );
-
-    res.status(201).json({ id, message: 'Resume saved successfully' });
+    res.status(200).json({ id: resumeId, message: 'Resume saved successfully' });
   } catch (error) {
     console.error('Submit resume error:', error);
     res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
@@ -88,8 +113,8 @@ export const getResumePdf = async (req: Request, res: Response) => {
 
     const dbData = rows[0];
 
-    // Map DB snake_case columns back to frontend camelCase
-    const resumeData = {
+    // Read full JSON or fallback map DB columns
+    const resumeData = dbData.resume_data ? dbData.resume_data : {
       personalDetails: dbData.personal_details || {},
       summary: dbData.summary || '',
       education: dbData.education || [],
@@ -132,5 +157,53 @@ export const exportDirect = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Direct PDF generation error:', error);
     res.status(500).json({ error: 'Internal server error while generating PDF', details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+export const getUserResumes = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as any;
+    const userId = authReq.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const [rows]: any = await pool.query('SELECT id, resume_data, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
+    
+    // Parse the display info to make the list lightweight
+    const resumes = rows.map((r: any) => {
+      let title = "Untitled Resume";
+      if (r.resume_data && r.resume_data.personalDetails && r.resume_data.personalDetails.fullName) {
+        title = r.resume_data.personalDetails.fullName + " Resume";
+      }
+      return {
+        id: r.id,
+        title,
+        updatedAt: r.updated_at
+      };
+    });
+
+    res.json({ resumes, count: resumes.length });
+  } catch (error) {
+    console.error('Get user resumes error:', error);
+    res.status(500).json({ error: 'Internal server error fetching resumes' });
+  }
+};
+
+export const deleteResume = async (req: Request, res: Response) => {
+  try {
+    const authReq = req as any;
+    const userId = authReq.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    const [result]: any = await pool.query('DELETE FROM resumes WHERE id = ? AND user_id = ?', [id, userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Resume not found or unauthorized' });
+    }
+
+    res.json({ message: 'Resume deleted successfully' });
+  } catch (error) {
+    console.error('Delete resume error:', error);
+    res.status(500).json({ error: 'Internal server error deleting resume' });
   }
 };

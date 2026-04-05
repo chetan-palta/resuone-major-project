@@ -57,6 +57,7 @@ export const initDb = async () => {
       CREATE TABLE IF NOT EXISTS resumes (
         id VARCHAR(36) PRIMARY KEY,
         user_id VARCHAR(36) NULL,
+        resume_name VARCHAR(255) DEFAULT 'Untitled Resume',
         resume_data JSON NULL,
         template_type VARCHAR(100) DEFAULT 'modern',
         personal_details JSON NULL,
@@ -79,6 +80,7 @@ export const initDb = async () => {
     } catch (e) { /* Column might already exist */ }
 
     // Safely add resume_data and template_type just in case it existed
+    try { await connection.query('ALTER TABLE resumes ADD COLUMN resume_name VARCHAR(255) DEFAULT "Untitled Resume";'); } catch (e) { }
     try { await connection.query('ALTER TABLE resumes ADD COLUMN resume_data JSON NULL;'); } catch (e) { }
     try { await connection.query('ALTER TABLE resumes ADD COLUMN template_type VARCHAR(100) DEFAULT "modern";'); } catch (e) { }
 

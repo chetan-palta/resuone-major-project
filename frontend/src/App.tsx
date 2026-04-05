@@ -8,13 +8,15 @@ import { Home } from './components/Home';
 import { ResumeImport } from './components/ResumeImport';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
+import { Admin } from './components/Admin';
 import axios from 'axios';
 
 axios.defaults.withCredentials = true;
 
 const MainApp = () => {
-  const { data, clearSavedData } = useResume();
+  const { data, clearSavedData, setResumeData } = useResume();
   const [isExporting, setIsExporting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -48,6 +50,37 @@ const MainApp = () => {
     }
   };
 
+  const handleSaveResume = async () => {
+    try {
+      setIsSaving(true);
+      const suggestedName = data.resumeName || (data.personalDetails?.fullName ? `${data.personalDetails.fullName} Resume` : 'Untitled Resume');
+      const customName = window.prompt("Enter Resume Name:", suggestedName);
+      if (customName === null) {
+        setIsSaving(false);
+        return;
+      }
+      
+      const payload = { ...data, resumeName: customName };
+      const response = await axios.post('http://localhost:5000/api/resumes', payload);
+      
+      if (response.data.id) {
+        setResumeData({ ...payload, id: response.data.id });
+      } else {
+        setResumeData(payload);
+      }
+      alert('Resume saved successfully!');
+    } catch (error: any) {
+      console.error(error);
+      if (error.response?.status === 401) {
+        alert('Please login to save your resume.');
+      } else {
+        alert(error.response?.data?.error || 'Failed to save resume.');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Left Input Panel */}
@@ -59,6 +92,13 @@ const MainApp = () => {
           </div>
           <div className="flex items-center gap-3">
             <ResumeImport />
+            <button
+              className="btn btn-outline"
+              onClick={handleSaveResume}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save Draft'}
+            </button>
             <button
               className="btn btn-primary"
               onClick={handleExport}
@@ -133,6 +173,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/resume" element={<MainApp />} />
         <Route path="/render/:id" element={<RenderRoute />} />
       </Routes>

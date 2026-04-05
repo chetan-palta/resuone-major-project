@@ -76,8 +76,8 @@ export const submitResume = async (req: Request, res: Response) => {
       }
       
       await pool.query(
-        'UPDATE resumes SET resume_data = ?, updated_at = NOW() WHERE id = ?',
-        [JSON.stringify(data), resumeId]
+        'UPDATE resumes SET resume_name = ?, resume_data = ?, updated_at = NOW() WHERE id = ?',
+        [data.resumeName || 'Untitled Resume', JSON.stringify(data), resumeId]
       );
     } else {
       // Check limit for new resume
@@ -88,8 +88,8 @@ export const submitResume = async (req: Request, res: Response) => {
 
       resumeId = randomUUID();
       await pool.query(
-        'INSERT INTO resumes (id, user_id, resume_data) VALUES (?, ?, ?)',
-        [resumeId, userId, JSON.stringify(data)]
+        'INSERT INTO resumes (id, user_id, resume_name, resume_data) VALUES (?, ?, ?, ?)',
+        [resumeId, userId, data.resumeName || 'Untitled Resume', JSON.stringify(data)]
       );
     }
 
@@ -166,12 +166,12 @@ export const getUserResumes = async (req: Request, res: Response) => {
     const userId = authReq.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const [rows]: any = await pool.query('SELECT id, resume_data, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
+    const [rows]: any = await pool.query('SELECT id, resume_name, resume_data, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC', [userId]);
     
     // Parse the display info to make the list lightweight
     const resumes = rows.map((r: any) => {
-      let title = "Untitled Resume";
-      if (r.resume_data && r.resume_data.personalDetails && r.resume_data.personalDetails.fullName) {
+      let title = r.resume_name && r.resume_name !== 'Untitled Resume' ? r.resume_name : "Untitled Resume";
+      if (title === "Untitled Resume" && r.resume_data && r.resume_data.personalDetails && r.resume_data.personalDetails.fullName) {
         title = r.resume_data.personalDetails.fullName + " Resume";
       }
       return {

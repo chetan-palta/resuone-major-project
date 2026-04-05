@@ -18,31 +18,43 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
 
   return (
     <div id="resume-container" className="a4-container">
-      <div className="resume-paper">
-        {/* Header Section */}
-        <div className="resume-header">
-          <div className="resume-name">{personalDetails.fullName || 'FIRST NAME LAST NAME'}</div>
-          <div className="resume-contact">
-            {personalDetails.phone && <span>{personalDetails.phone} |</span>}
-            {personalDetails.email && (
-              <span>
-                <a href={`mailto:${personalDetails.email}`} target="_blank" rel="noopener noreferrer">{personalDetails.email}</a> |
-              </span>
-            )}
-            {personalDetails.linkedin && (
-              <span>
-                <a href={ensureHref(personalDetails.linkedin)} target="_blank" rel="noopener noreferrer">{personalDetails.linkedin.replace(/^https?:\/\//, '')}</a> |
-              </span>
-            )}
-            {personalDetails.github && (
-              <span>
-                <a href={ensureHref(personalDetails.github)} target="_blank" rel="noopener noreferrer">{personalDetails.github.replace(/^https?:\/\//, '')}</a> |
-              </span>
-            )}
-            {personalDetails.location && <span>{personalDetails.location}</span>}
-          </div>
+      {/* Header Section */}
+      <div className="resume-header">
+        <div className="resume-name">{personalDetails.fullName || 'FIRST NAME LAST NAME'}</div>
+        <div className="resume-contact">
+          {personalDetails.phone && <span>{personalDetails.phone}</span>}
+          {personalDetails.email && (
+            <span>
+              <a href={`mailto:${personalDetails.email}`} target="_blank" rel="noopener noreferrer">{personalDetails.email}</a>
+            </span>
+          )}
+          {personalDetails.linkedin && (
+            <span>
+              <a href={ensureHref(personalDetails.linkedin)} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            </span>
+          )}
+          {personalDetails.github && (
+            <span>
+              <a href={ensureHref(personalDetails.github)} target="_blank" rel="noopener noreferrer">GitHub</a>
+            </span>
+          )}
+          {personalDetails.leetcode && (
+            <span>
+              <a href={ensureHref(personalDetails.leetcode)} target="_blank" rel="noopener noreferrer">LeetCode</a>
+            </span>
+          )}
+          {personalDetails.portfolio && (
+            <span>
+              <a href={ensureHref(personalDetails.portfolio)} target="_blank" rel="noopener noreferrer">Portfolio</a>
+            </span>
+          )}
+          {personalDetails.location && <span>{personalDetails.location}</span>}
         </div>
+      </div>
 
+      {/* Global spacing reduction applied via inline style for paper */}
+      <div className="resume-paper" style={{ lineHeight: '1.2', padding: '8mm 15mm' }}>
+        
         {/* Summary */}
         {summary && (
           <div className="resume-section">
@@ -53,16 +65,16 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
 
         {/* Education */}
         {education.length > 0 && education[0].institution && (
-          <div className="resume-section">
+          <div className="resume-section" style={{ marginBottom: '1.5mm' }}>
             <div className="resume-section-title">Education</div>
             {education.map(edu => (
-              <div key={edu.id} className="resume-item">
+              <div key={edu.id} className="resume-item" style={{ marginBottom: '1mm' }}>
                 <div className="resume-item-header">
                   <span className="resume-item-title">{edu.degree}</span>
                   <span className="resume-item-date">{edu.startDate} – {edu.endDate}</span>
                 </div>
-                <div className="resume-item-header">
-                  <span className="resume-item-subtitle">• {edu.institution}, {edu.location} | {edu.score && `Score: ${edu.score}`}</span>
+                <div style={{ fontSize: '9.5pt', fontStyle: 'italic', marginTop: '-1px' }}>
+                  {edu.institution}{edu.location ? `, ${edu.location}` : ''} | {edu.score ? (edu.scoreType?.includes('Percentage') ? `Percentage: ${edu.score}%` : `CGPA: ${edu.score}`) : ''}
                 </div>
               </div>
             ))}
@@ -75,8 +87,10 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
             <div className="resume-section-title">Skills</div>
             <div className="resume-skills-group">
               {skills.map(skill => skill.name && skill.items && (
-                <div key={skill.id} className="resume-skill-row">
-                  <span className="resume-item-subtitle mr-2" style={{ marginRight: '6px' }}>• <b>{skill.name}:</b></span>
+                <div key={skill.id} className="resume-skill-row" style={{ display: 'flex', alignItems: 'baseline', marginBottom: '1px' }}>
+                  <span className="resume-item-subtitle" style={{ whiteSpace: 'nowrap', marginRight: '6px', fontWeight: 'bold' }}>
+                    • {skill.name}:
+                  </span>
                   <span>{skill.items}</span>
                 </div>
               ))}
@@ -91,17 +105,17 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
             {projects.map(proj => (
               <div key={proj.id} className="resume-item">
                 <div className="resume-item-header">
-                  <span className="resume-item-title">{proj.title} {proj.technologies && `(${proj.technologies})`}</span>
-                  <span className="resume-item-date">{proj.date}</span>
+                  <span className="resume-item-title">
+                    <span style={{ fontSize: '10pt', marginRight: '4px' }}>●</span>
+                    {proj.title} {proj.technologies && `(${proj.technologies})`}
+                    {(proj.link || proj.github) && <span style={{ fontWeight: 'normal' }}>{' — '}</span>}
+                    {proj.link && <a href={ensureHref(proj.link)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'normal' }}>Live</a>}
+                    {proj.link && proj.github && <span style={{ fontWeight: 'normal' }}>{' | '}</span>}
+                    {proj.github && <a href={ensureHref(proj.github)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'black', fontWeight: 'normal' }}>GitHub</a>}
+                  </span>
+                  <span className="resume-item-date">{proj.date ? `— ${proj.date}` : ''}</span>
                 </div>
-                {(proj.link || proj.github) && (
-                  <div style={{ fontSize: '10pt', marginBottom: '1px' }}>
-                    {proj.link && <a href={proj.link} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'black' }}>Live</a>} 
-                    {proj.link && proj.github && ' | '}
-                    {proj.github && <a href={proj.github} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'black' }}>GitHub</a>}
-                  </div>
-                )}
-                <div>{proj.description}</div>
+                <div style={{ paddingLeft: '5.5mm' }}>{proj.description}</div>
               </div>
             ))}
           </div>
@@ -114,14 +128,19 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
             {experience.map(exp => (
               <div key={exp.id} className="resume-item">
                 <div className="resume-item-header">
-                  <span className="resume-item-title">{exp.company}</span>
+                  <span className="resume-item-title">
+                    <span style={{ fontSize: '10pt', marginRight: '4px' }}>●</span>
+                    {exp.company}
+                  </span>
+                  <span className="resume-item-date">{exp.location} {exp.type && `(${exp.type})`}</span>
+                </div>
+                <div className="resume-item-header" style={{ fontStyle: 'italic', fontSize: '9.5pt', marginTop: '-2px' }}>
+                  <span style={{ marginLeft: '1.5mm' }}>
+                    {exp.role}
+                  </span>
                   <span className="resume-item-date">{exp.startDate} – {exp.endDate}</span>
                 </div>
-                <div className="resume-item-header">
-                  <span className="resume-item-subtitle">{exp.role}</span>
-                </div>
-                <div style={{ fontSize: '10pt', fontStyle: 'italic', marginBottom: '2px' }}>{exp.type} | {exp.location}</div>
-                <ul className="resume-list">
+                <ul className="resume-list" style={{ marginTop: '1px' }}>
                   {exp.bulletPoints.map((bp, i) => bp && <li key={i}>{bp}</li>)}
                 </ul>
               </div>
@@ -129,18 +148,18 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
           </div>
         )}
 
-        {/* Extra Curricular */}
-        {extraCurricular.some(e => e) && (
+        {/* Extra Curricular (Above Certifications) */}
+        {extraCurricular.some(e => e.trim()) && (
           <div className="resume-section">
             <div className="resume-section-title">Extra Curricular Activities</div>
             <ul className="resume-list">
-              {extraCurricular.map((item, i) => item && <li key={i}>{item}</li>)}
+              {extraCurricular.map((item, i) => item.trim() && <li key={i}>{item}</li>)}
             </ul>
           </div>
         )}
 
-        {/* Certifications */}
-        {certifications.length > 0 && certifications.some(c => c.title || c.description) && (
+        {/* Certifications (Only if No ECs) */}
+        {!extraCurricular.some(e => e.trim()) && certifications.length > 0 && certifications.some(c => c.title.trim() || c.description.trim()) && (
           <div className="resume-section">
             <div className="resume-section-title">Certifications</div>
             {certifications.map(cert => (
@@ -154,6 +173,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
                         ) : (
                           cert.title
                         )}
+                        {cert.issuer && ` — ${cert.issuer}`}
                       </span>
                       {cert.date && <span className="resume-item-date">{cert.date}</span>}
                     </div>
@@ -165,7 +185,6 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
             ))}
           </div>
         )}
-        
       </div>
     </div>
   );

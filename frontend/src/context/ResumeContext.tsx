@@ -5,8 +5,29 @@ import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'resuone_form_data';
 
+export interface AISuggestion {
+  section: 'projects' | 'experience';
+  index: number;
+  tips: Array<{
+    type: string;
+    message: string;
+    suggestion?: string;
+    originalText?: string;
+  }>;
+}
+
+export interface AISkillCategory {
+  languages: string[];
+  tools: string[];
+  databases: string[];
+}
+
 interface ResumeContextType {
   data: ResumeData;
+  aiScore: number | null;
+  aiSuggestions: AISuggestion[];
+  aiSkillRecommendations: AISkillCategory | null;
+  isAnalyzing: boolean;
   updatePersonalDetails: (field: string, value: string) => void;
   updateSummary: (value: string) => void;
   addEducation: () => void;
@@ -29,6 +50,7 @@ interface ResumeContextType {
   updateCertification: (id: string, field: string, value: string) => void;
   removeCertification: (id: string) => void;
   clearSavedData: () => void;
+  setResumeData: (data: ResumeData) => void;
 }
 
 const defaultData: ResumeData = {
@@ -38,11 +60,13 @@ const defaultData: ResumeData = {
     phone: '',
     linkedin: '',
     github: '',
+    leetcode: '',
+    portfolio: '',
     location: ''
   },
   summary: '',
   education: [
-    { id: uuidv4(), degree: '', institution: '', location: '', score: '', startDate: '', endDate: '' }
+    { id: uuidv4(), degree: '', institution: '', location: '', scoreType: 'CGPA (out of 10)', score: '', startDate: '', endDate: '' }
   ],
   skills: [
     { id: uuidv4(), name: 'Languages', items: '' },
@@ -64,7 +88,11 @@ const loadSavedData = (): ResumeData => {
       if (!parsed.certifications) {
         parsed.certifications = [];
       }
-      return parsed;
+      return {
+        ...defaultData,
+        ...parsed,
+        personalDetails: { ...defaultData.personalDetails, ...parsed.personalDetails }
+      };
     }
   } catch {
     // If parse fails, fall through to default
@@ -76,6 +104,41 @@ const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
 export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [data, setData] = useState<ResumeData>(loadSavedData);
+  const [aiScore, setAiScore] = useState<number | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
+  const [aiSkillRecommendations, setAiSkillRecommendations] = useState<AISkillCategory | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Debounced AI Analysis
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      // Only analyze if there's meaningful data
+      const hasContent = data.projects.length > 0 || data.experience.length > 0 || data.summary;
+      if (!hasContent) return;
+
+      setIsAnalyzing(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/ai/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          setAiScore(result.resumeScore);
+          setAiSuggestions(result.suggestions || []);
+          setAiSkillRecommendations(result.skillRecommendations || null);
+        }
+      } catch (err) {
+        console.error('Failed to run AI analysis:', err);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }, 1000); // 1-second debounce to avoid overloading requests on each keystroke
+
+    return () => clearTimeout(handler);
+  }, [data]);
 
   // Auto-save to localStorage whenever data changes
   useEffect(() => {
@@ -90,13 +153,17 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const setResumeData = (newData: ResumeData) => {
+    setData(newData);
+  };
+
   const updatePersonalDetails = (field: string, value: string) => {
     setData(prev => ({ ...prev, personalDetails: { ...prev.personalDetails, [field]: value } }));
   };
 
   const updateSummary = (value: string) => {
-    // Basic word limit validation
-    if (value.split(/\s+/).filter(Boolean).length <= 70) {
+    // Basic word limit validation: New limit 55 words
+    if (value.split(/\s+/).filter(Boolean).length <= 55) {
       setData(prev => ({ ...prev, summary: value }));
     }
   };
@@ -104,7 +171,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addEducation = () => {
     setData(prev => ({
       ...prev,
-      education: [...prev.education, { id: uuidv4(), degree: '', institution: '', location: '', score: '', startDate: '', endDate: '' }]
+      education: [...prev.education, { id: uuidv4(), degree: '', institution: '', location: '', scoreType: 'CGPA (out of 10)', score: '', startDate: '', endDate: '' }]
     }));
   };
 
@@ -120,13 +187,20 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const addSkillCategory = () => {
-    setData(prev => ({
-      ...prev,
-      skills: [...prev.skills, { id: uuidv4(), name: '', items: '' }]
-    }));
+    setData(prev => {
+      if (prev.skills.length >= 6) return prev;
+      return {
+        ...prev,
+        skills: [...prev.skills, { id: uuidv4(), name: '', items: '' }]
+      };
+    });
   };
 
   const updateSkillCategory = (id: string, field: string, value: string) => {
+    if (field === 'items') {
+      const parts = value.split(',').filter(x => x.trim() !== '');
+      if (parts.length > 6) return; // Enforce max 6 skills per category
+    }
     setData(prev => ({
       ...prev,
       skills: prev.skills.map(s => s.id === id ? { ...s, [field]: value } : s)
@@ -147,7 +221,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const updateProject = (id: string, field: string, value: string) => {
-    if (field === 'description' && value.split(/\s+/).filter(Boolean).length > 30) return;
+    if (field === 'description' && value.split(/\s+/).filter(Boolean).length > 25) return;
     setData(prev => ({
       ...prev,
       projects: prev.projects.map(p => p.id === id ? { ...p, [field]: value } : p)
@@ -161,7 +235,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addExperience = () => {
     setData(prev => ({
       ...prev,
-      experience: [...prev.experience, { id: uuidv4(), company: '', role: '', location: '', type: '', startDate: '', endDate: '', bulletPoints: ['', ''] }]
+      experience: [...prev.experience, { id: uuidv4(), company: '', role: '', location: '', type: '', startDate: '', endDate: '', bulletPoints: ['', '', ''] }]
     }));
   };
 
@@ -173,6 +247,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const updateExperienceBullet = (expId: string, index: number, value: string) => {
+    if (value.split(/\s+/).filter(Boolean).length > 15) return; // Enforce max 15 words
     setData(prev => ({
       ...prev,
       experience: prev.experience.map(e => {
@@ -210,7 +285,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addCertification = () => {
     setData(prev => ({
       ...prev,
-      certifications: [...prev.certifications, { id: uuidv4(), title: '', link: '', date: '', description: '' }]
+      certifications: [...prev.certifications, { id: uuidv4(), title: '', issuer: '', link: '', date: '', description: '' }]
     }));
   };
 
@@ -228,6 +303,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   return (
     <ResumeContext.Provider value={{
       data,
+      aiScore, aiSuggestions, aiSkillRecommendations, isAnalyzing,
       updatePersonalDetails, updateSummary,
       addEducation, updateEducation, removeEducation,
       addSkillCategory, updateSkillCategory, removeSkillCategory,
@@ -235,7 +311,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       addExperience, updateExperience, updateExperienceBullet, removeExperience,
       updateExtraCurricular, addExtraCurricular, removeExtraCurricular,
       addCertification, updateCertification, removeCertification,
-      clearSavedData
+      clearSavedData, setResumeData
     }}>
       {children}
     </ResumeContext.Provider>

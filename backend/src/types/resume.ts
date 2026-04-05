@@ -4,7 +4,10 @@ export interface PersonalDetails {
   phone: string;
   linkedin: string;
   github: string;
+  leetcode: string;
+  portfolio: string;
   location: string;
+  targetRole?: string;
 }
 
 export interface Education {
@@ -12,6 +15,7 @@ export interface Education {
   degree: string;
   institution: string;
   location: string;
+  scoreType: string;
   score: string;
   startDate: string;
   endDate: string;
@@ -47,12 +51,14 @@ export interface Experience {
 export interface Certification {
   id: string;
   title: string;
+  issuer: string;
   link: string;
   date: string;
   description: string;
 }
 
 export interface ResumeData {
+  id?: string;
   personalDetails: PersonalDetails;
   summary: string;
   education: Education[];

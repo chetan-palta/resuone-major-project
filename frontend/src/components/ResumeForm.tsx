@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useResume } from '../context/ResumeContext';
-import { ChevronDown, ChevronRight, Plus, Trash2, Wand2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Wand2, Target, Sparkles } from 'lucide-react';
+import { AIPanel } from './AIPanel';
 
 const AIFeedback = ({ text }: { text: string }) => {
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -47,6 +48,66 @@ const AIFeedback = ({ text }: { text: string }) => {
   );
 };
 
+const SkillAutocomplete = ({ categoryName, currentItems, onSelect }: { categoryName: string, currentItems: string, onSelect: (items: string) => void }) => {
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (!categoryName || categoryName.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    const fetchSuggestions = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`http://localhost:5000/api/ai/skills/autocomplete?category=${encodeURIComponent(categoryName)}`);
+        const data = await res.json();
+        setSuggestions(data.suggestions || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const handler = setTimeout(fetchSuggestions, 800);
+    return () => clearTimeout(handler);
+  }, [categoryName]);
+
+  if (!categoryName || (suggestions.length === 0 && !loading)) return null;
+
+  const handleAdd = (skill: string) => {
+    const items = currentItems.split(',').map(s => s.trim()).filter(Boolean);
+    if (!items.includes(skill) && items.length < 6) {
+      onSelect([...items, skill].join(', '));
+    }
+  };
+
+  return (
+    <div className="mt-2 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+      <div className="text-xs font-semibold text-blue-800 flex items-center gap-1 mb-2">
+        <Sparkles size={12} /> AI Suggestions
+      </div>
+      {loading ? (
+        <div className="text-xs text-blue-600">Loading suggestions...</div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {suggestions.map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleAdd(s)}
+              className="px-2 py-1 bg-white text-blue-700 text-xs rounded border border-blue-200 hover:bg-blue-600 hover:text-white transition-colors"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Section = ({ title, children, defaultOpen = false }: any) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
@@ -78,11 +139,28 @@ export const ResumeForm = () => {
   };
 
   const summaryWords = data.summary.split(/\s+/).filter(Boolean).length;
+  const hasCertifications = data.certifications.length > 0 && data.certifications.some(c => c.title.trim() || c.description.trim());
+  const hasExtraCurricular = data.extraCurricular.some(e => e.trim());
 
   return (
     <div>
+      <AIPanel />
+
       <Section title="Personal Details" defaultOpen={true}>
         <div className="input-group">
+          <label className="input-label bg-blue-50 text-blue-800 p-2 rounded-t-md mb-0 border-b border-blue-100 flex items-center gap-2">
+            <Target size={16} /> Target Job Role (Powers AI Suggestions)
+          </label>
+          <input 
+            className="input-field rounded-t-none border-t-0 bg-blue-50/30" 
+            name="targetRole" 
+            value={data.personalDetails.targetRole || ''} 
+            onChange={handlePersonal} 
+            placeholder="e.g. Full Stack Developer, Data Scientist" 
+          />
+        </div>
+
+        <div className="input-group mt-4">
           <label className="input-label">Full Name</label>
           <input className="input-field" name="fullName" value={data.personalDetails.fullName} onChange={handlePersonal} placeholder="e.g. John Doe" />
         </div>
@@ -106,6 +184,16 @@ export const ResumeForm = () => {
             <input className="input-field" name="github" value={data.personalDetails.github} onChange={handlePersonal} placeholder="github.com/johndoe" />
           </div>
         </div>
+        <div className="input-row">
+          <div className="input-group">
+            <label className="input-label">LeetCode</label>
+            <input className="input-field" name="leetcode" value={data.personalDetails.leetcode} onChange={handlePersonal} placeholder="leetcode.com/johndoe" />
+          </div>
+          <div className="input-group">
+            <label className="input-label">Portfolio</label>
+            <input className="input-field" name="portfolio" value={data.personalDetails.portfolio} onChange={handlePersonal} placeholder="johndoe.com" />
+          </div>
+        </div>
         <div className="input-group">
           <label className="input-label">Location</label>
           <input className="input-field" name="location" value={data.personalDetails.location} onChange={handlePersonal} placeholder="City, Country" />
@@ -116,8 +204,8 @@ export const ResumeForm = () => {
         <div className="input-group">
           <div className="input-label">
             <span>Summary</span>
-            <span className={`input-count-limit ${summaryWords >= 70 ? 'limit-reached' : ''}`}>
-              {summaryWords}/70 words
+            <span className={`input-count-limit ${summaryWords >= 55 ? 'limit-reached' : ''}`}>
+              {summaryWords}/55 words
             </span>
           </div>
           <textarea 
@@ -155,8 +243,20 @@ export const ResumeForm = () => {
             </div>
             <div className="input-row">
               <div className="input-group">
-                <label className="input-label">Score / CGPA</label>
-                <input className="input-field" value={edu.score} onChange={(e) => updateEducation(edu.id, 'score', e.target.value)} placeholder="8.5/10.0" />
+                <label className="input-label">Marks / CGPA</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    className="input-field" 
+                    value={edu.scoreType || 'CGPA (out of 10)'} 
+                    onChange={(e) => updateEducation(edu.id, 'scoreType', e.target.value)}
+                    style={{ flex: 1, paddingRight: '8px' }}
+                  >
+                    <option value="CGPA (out of 10)">CGPA (10)</option>
+                    <option value="CGPA (out of 9.5)">CGPA (9.5)</option>
+                    <option value="Percentage (%)">Percentage (%)</option>
+                  </select>
+                  <input className="input-field" style={{ flex: 1 }} value={edu.score} onChange={(e) => updateEducation(edu.id, 'score', e.target.value)} placeholder="e.g. 8.5" />
+                </div>
               </div>
               <div className="input-group">
                 <label className="input-label">Start & End Date</label>
@@ -172,6 +272,9 @@ export const ResumeForm = () => {
       </Section>
 
       <Section title="Skills">
+        <div className="text-sm text-gray-500 mb-4 pb-2 border-b">
+          Recommended: Use 4 skill categories for best formatting. (Min 3, Max 6 categories Allowed. Max 6 skills per category)
+        </div>
         {data.skills.map((skill, idx) => (
           <div key={skill.id} className="array-item">
             <div className="array-item-title">
@@ -185,10 +288,17 @@ export const ResumeForm = () => {
             <div className="input-group">
               <label className="input-label">Skills (comma separated)</label>
               <input className="input-field" value={skill.items} onChange={(e) => updateSkillCategory(skill.id, 'items', e.target.value)} placeholder="Java, Python, C++" />
+              <SkillAutocomplete 
+                categoryName={skill.name} 
+                currentItems={skill.items} 
+                onSelect={(newItems) => updateSkillCategory(skill.id, 'items', newItems)} 
+              />
             </div>
           </div>
         ))}
-        <button className="btn btn-outline w-full mt-2" onClick={addSkillCategory}><Plus size={16} /> Add Skill Category</button>
+        <button className="btn btn-outline w-full mt-2" onClick={addSkillCategory} disabled={data.skills.length >= 6}>
+          <Plus size={16} /> Add Skill Category
+        </button>
       </Section>
 
       <Section title="Projects">
@@ -228,8 +338,8 @@ export const ResumeForm = () => {
             <div className="input-group">
               <div className="input-label">
                 <span>Description</span>
-                <span className={`input-count-limit ${descWords >= 30 ? 'limit-reached' : ''}`}>
-                  {descWords}/30 words
+                <span className={`input-count-limit ${descWords >= 25 ? 'limit-reached' : ''}`}>
+                  {descWords}/25 words
                 </span>
               </div>
               <textarea 
@@ -282,7 +392,7 @@ export const ResumeForm = () => {
               </div>
             </div>
             <div className="input-group">
-              <label className="input-label">Bullet Points (Max 3)</label>
+              <label className="input-label">Bullet Points (Max 3, 15 words max each)</label>
               {exp.bulletPoints.map((bp, bidx) => (
                  bidx < 3 && (
                   <div key={bidx} style={{ marginBottom: '8px' }}>
@@ -304,46 +414,126 @@ export const ResumeForm = () => {
       </Section>
 
       <Section title="Extra Curricular Activities">
-        {data.extraCurricular.map((item, idx) => (
-          <div key={idx} className="input-row" style={{ alignItems: 'center' }}>
-            <div className="input-group flex-1" style={{ width: '100%', marginBottom: '8px' }}>
-              <input className="input-field" value={item} onChange={(e) => updateExtraCurricular(idx, e.target.value)} placeholder="e.g. Winner of Hackathon 2023" />
+        <div className="text-sm text-gray-500 mb-2">
+          Note: You can choose only ONE section — Extra Curricular Activities or Certifications (recommended: Extra Curricular Activities).
+        </div>
+        {hasCertifications && (
+          <div className="text-sm text-error mb-2 font-medium">This section is disabled because the other is already in use.</div>
+        )}
+        <div className={hasCertifications ? 'opacity-50 pointer-events-none' : ''}>
+          {data.extraCurricular.map((item, idx) => (
+            <div key={idx} className="input-row" style={{ alignItems: 'center' }}>
+              <div className="input-group flex-1" style={{ width: '100%', marginBottom: '8px' }}>
+                <input 
+                  className="input-field" 
+                  value={item} 
+                  onChange={(e) => updateExtraCurricular(idx, e.target.value)} 
+                  placeholder="e.g. Winner of Hackathon 2023"
+                  disabled={hasCertifications}
+                />
+              </div>
+              <button 
+                className="btn-danger p-1" 
+                onClick={() => removeExtraCurricular(idx)}
+                disabled={hasCertifications}
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-            <button className="btn-danger p-1" onClick={() => removeExtraCurricular(idx)}><Trash2 size={16} /></button>
-          </div>
-        ))}
-        <button className="btn btn-outline w-full mt-2" onClick={addExtraCurricular}><Plus size={16} /> Add Activity</button>
+          ))}
+          <button 
+            className="btn btn-outline w-full mt-2" 
+            onClick={addExtraCurricular}
+            disabled={hasCertifications}
+          >
+            <Plus size={16} /> Add Activity
+          </button>
+        </div>
       </Section>
 
       <Section title="Certifications">
-        <div className="text-sm text-gray-500 mb-4 pb-2 border-b">Add certification details (title, link, date) or a single descriptive line.</div>
-        {(data.certifications || []).map((cert, idx) => (
-          <div key={cert.id} className="array-item">
-            <div className="array-item-title">
-              Certification #{idx + 1}
-              <button className="btn-danger p-1" onClick={() => removeCertification(cert.id)}><Trash2 size={16} /></button>
-            </div>
-            <div className="input-group">
-              <label className="input-label">Certification Title</label>
-              <input className="input-field" value={cert.title} onChange={(e) => updateCertification(cert.id, 'title', e.target.value)} placeholder="e.g. AWS Solutions Architect" />
-            </div>
-            <div className="input-row">
-              <div className="input-group">
-                <label className="input-label">Link (optional)</label>
-                <input className="input-field" value={cert.link} onChange={(e) => updateCertification(cert.id, 'link', e.target.value)} placeholder="https://credential.url/..." />
+        <div className="text-sm text-gray-500 mb-2">
+          Note: You can choose only ONE section — Extra Curricular Activities or Certifications (recommended: Extra Curricular Activities).
+        </div>
+        {hasExtraCurricular && (
+          <div className="text-sm text-error mb-2 font-medium">This section is disabled because the other is already in use.</div>
+        )}
+        <div className={hasExtraCurricular ? 'opacity-50 pointer-events-none' : ''}>
+          <div className="text-sm text-gray-500 mb-4 pb-2 border-b">Add certification details (title, link, date) or a single descriptive line.</div>
+          {(data.certifications || []).map((cert, idx) => (
+            <div key={cert.id} className="array-item">
+              <div className="array-item-title">
+                Certification #{idx + 1}
+                <button 
+                  className="btn-danger p-1" 
+                  onClick={() => removeCertification(cert.id)}
+                  disabled={hasExtraCurricular}
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
               <div className="input-group">
-                <label className="input-label">Date (optional)</label>
-                <input className="input-field" value={cert.date} onChange={(e) => updateCertification(cert.id, 'date', e.target.value)} placeholder="Jan 2024" />
+                <label className="input-label">Certification Title</label>
+                <input 
+                  className="input-field" 
+                  value={cert.title} 
+                  onChange={(e) => updateCertification(cert.id, 'title', e.target.value)} 
+                  placeholder="e.g. AWS Solutions Architect"
+                  disabled={hasExtraCurricular}
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Issuing Organisation</label>
+                <input 
+                  className="input-field" 
+                  value={cert.issuer} 
+                  onChange={(e) => updateCertification(cert.id, 'issuer', e.target.value)} 
+                  placeholder="e.g. Amazon Web Services"
+                  disabled={hasExtraCurricular}
+                />
+              </div>
+              <div className="input-row">
+                <div className="input-group">
+                  <label className="input-label">Link (optional)</label>
+                  <input 
+                    className="input-field" 
+                    value={cert.link} 
+                    onChange={(e) => updateCertification(cert.id, 'link', e.target.value)} 
+                    placeholder="https://credential.url/..."
+                    disabled={hasExtraCurricular}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Date (optional)</label>
+                  <input 
+                    className="input-field" 
+                    value={cert.date} 
+                    onChange={(e) => updateCertification(cert.id, 'date', e.target.value)} 
+                    placeholder="Jan 2024"
+                    disabled={hasExtraCurricular}
+                  />
+                </div>
+              </div>
+              <div className="input-group">
+                <label className="input-label">— OR — Single descriptive line</label>
+                <input 
+                  className="input-field" 
+                  value={cert.description} 
+                  onChange={(e) => updateCertification(cert.id, 'description', e.target.value)} 
+                  placeholder="e.g. Certified Kubernetes Administrator (CKA) — Dec 2023"
+                  disabled={hasExtraCurricular}
+                />
               </div>
             </div>
-            <div className="input-group">
-              <label className="input-label">— OR — Single descriptive line</label>
-              <input className="input-field" value={cert.description} onChange={(e) => updateCertification(cert.id, 'description', e.target.value)} placeholder="e.g. Certified Kubernetes Administrator (CKA) — Dec 2023" />
-            </div>
-          </div>
-        ))}
-        <button className="btn btn-outline w-full mt-2" onClick={addCertification}><Plus size={16} /> Add Certification</button>
+          ))}
+          <button 
+            className="btn btn-outline w-full mt-2" 
+            onClick={addCertification}
+            disabled={hasExtraCurricular}
+          >
+            <Plus size={16} /> Add Certification
+          </button>
+        </div>
       </Section>
 
       <div style={{ height: '40px' }}></div>

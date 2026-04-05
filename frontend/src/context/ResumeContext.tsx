@@ -49,6 +49,9 @@ interface ResumeContextType {
   addCertification: () => void;
   updateCertification: (id: string, field: string, value: string) => void;
   removeCertification: (id: string) => void;
+  addCustomLink: () => void;
+  updateCustomLink: (index: number, field: string, value: string) => void;
+  removeCustomLink: (index: number) => void;
   clearSavedData: () => void;
   setResumeData: (data: ResumeData) => void;
 }
@@ -62,7 +65,8 @@ const defaultData: ResumeData = {
     github: '',
     leetcode: '',
     portfolio: '',
-    location: ''
+    location: '',
+    customLinks: []
   },
   summary: '',
   education: [
@@ -300,6 +304,28 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setData(prev => ({ ...prev, certifications: prev.certifications.filter(c => c.id !== id) }));
   };
 
+  const addCustomLink = () => {
+    setData(prev => ({
+      ...prev,
+      personalDetails: { ...prev.personalDetails, customLinks: [...(prev.personalDetails.customLinks || []), { label: '', url: '' }] }
+    }));
+  };
+
+  const updateCustomLink = (index: number, field: string, value: string) => {
+    setData(prev => {
+      const newLinks = [...(prev.personalDetails.customLinks || [])];
+      newLinks[index] = { ...newLinks[index], [field]: value };
+      return { ...prev, personalDetails: { ...prev.personalDetails, customLinks: newLinks } };
+    });
+  };
+
+  const removeCustomLink = (index: number) => {
+    setData(prev => ({
+      ...prev,
+      personalDetails: { ...prev.personalDetails, customLinks: (prev.personalDetails.customLinks || []).filter((_, i) => i !== index) }
+    }));
+  };
+
   return (
     <ResumeContext.Provider value={{
       data,
@@ -311,6 +337,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       addExperience, updateExperience, updateExperienceBullet, removeExperience,
       updateExtraCurricular, addExtraCurricular, removeExtraCurricular,
       addCertification, updateCertification, removeCertification,
+      addCustomLink, updateCustomLink, removeCustomLink,
       clearSavedData, setResumeData
     }}>
       {children}

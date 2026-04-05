@@ -1,52 +1,8 @@
 import React, { useState } from 'react';
 import { useResume } from '../context/ResumeContext';
-import { ChevronDown, ChevronRight, Plus, Trash2, Wand2, Target, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Target, Sparkles } from 'lucide-react';
 import { AIPanel } from './AIPanel';
 
-const AIFeedback = ({ text }: { text: string }) => {
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const analyze = async () => {
-    if (!text || text.trim().length === 0) return;
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:5000/api/resumes/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      });
-      const data = await res.json();
-      setSuggestions(data.suggestions || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mt-2">
-      <button type="button" onClick={analyze} disabled={loading} className="ai-badge mb-2">
-        <Wand2 size={12} />
-        {loading ? 'Analyzing...' : 'AI Analyze'}
-      </button>
-      {suggestions.length > 0 && (
-        <div className="ai-panel">
-          <div className="ai-panel-title">
-            <Wand2 size={16} /> Suggestions ({suggestions.length})
-          </div>
-          {suggestions.map((s, i) => (
-            <div key={i} className="ai-suggestion">
-              <div>Consider replacing <span className="ai-verb">"{s.original}"</span> with <span className="ai-suggestion-replace">"{s.suggestion}"</span></div>
-              <div className="text-sm text-gray-500 mt-1">{s.reason}</div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 const SkillAutocomplete = ({ categoryName, currentItems, onSelect }: { categoryName: string, currentItems: string, onSelect: (items: string) => void }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -131,11 +87,15 @@ export const ResumeForm = () => {
     addProject, updateProject, removeProject,
     addExperience, updateExperience, updateExperienceBullet, removeExperience,
     addExtraCurricular, updateExtraCurricular, removeExtraCurricular,
-    addCertification, updateCertification, removeCertification
+    addCertification, updateCertification, removeCertification,
+    addCustomLink, updateCustomLink, removeCustomLink
   } = useResume();
 
   const handlePersonal = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updatePersonalDetails(e.target.name, e.target.value);
+    const { name, value } = e.target;
+    if (name === 'fullName' && !/^[a-zA-Z\s]*$/.test(value)) return;
+    if (name === 'phone' && !/^[0-9]*$/.test(value)) return;
+    updatePersonalDetails(name, value);
   };
 
   const summaryWords = data.summary.split(/\s+/).filter(Boolean).length;
@@ -167,36 +127,58 @@ export const ResumeForm = () => {
         <div className="input-row">
           <div className="input-group">
             <label className="input-label">Email</label>
-            <input className="input-field" name="email" value={data.personalDetails.email} onChange={handlePersonal} placeholder="john@example.com" />
+            <input type="email" className="input-field" name="email" value={data.personalDetails.email} onChange={handlePersonal} placeholder="john@example.com" />
           </div>
           <div className="input-group">
             <label className="input-label">Phone</label>
-            <input className="input-field" name="phone" value={data.personalDetails.phone} onChange={handlePersonal} placeholder="+1 234 567 8900" />
+            <input type="tel" className="input-field" name="phone" value={data.personalDetails.phone} onChange={handlePersonal} placeholder="1234567890" />
           </div>
         </div>
         <div className="input-row">
           <div className="input-group">
             <label className="input-label">LinkedIn</label>
-            <input className="input-field" name="linkedin" value={data.personalDetails.linkedin} onChange={handlePersonal} placeholder="linkedin.com/in/johndoe" />
+            <input type="url" className="input-field" name="linkedin" value={data.personalDetails.linkedin} onChange={handlePersonal} placeholder="https://linkedin.com/in/johndoe" />
           </div>
           <div className="input-group">
             <label className="input-label">GitHub</label>
-            <input className="input-field" name="github" value={data.personalDetails.github} onChange={handlePersonal} placeholder="github.com/johndoe" />
+            <input type="url" className="input-field" name="github" value={data.personalDetails.github} onChange={handlePersonal} placeholder="https://github.com/johndoe" />
           </div>
         </div>
         <div className="input-row">
           <div className="input-group">
             <label className="input-label">LeetCode</label>
-            <input className="input-field" name="leetcode" value={data.personalDetails.leetcode} onChange={handlePersonal} placeholder="leetcode.com/johndoe" />
+            <input type="url" className="input-field" name="leetcode" value={data.personalDetails.leetcode} onChange={handlePersonal} placeholder="https://leetcode.com/johndoe" />
           </div>
           <div className="input-group">
             <label className="input-label">Portfolio</label>
-            <input className="input-field" name="portfolio" value={data.personalDetails.portfolio} onChange={handlePersonal} placeholder="johndoe.com" />
+            <input type="url" className="input-field" name="portfolio" value={data.personalDetails.portfolio} onChange={handlePersonal} placeholder="https://johndoe.com" />
           </div>
         </div>
         <div className="input-group">
           <label className="input-label">Location</label>
           <input className="input-field" name="location" value={data.personalDetails.location} onChange={handlePersonal} placeholder="City, Country" />
+        </div>
+
+        <div className="input-group mt-4">
+          <label className="input-label font-semibold mb-2">Additional Links</label>
+          {(data.personalDetails.customLinks || []).map((link, idx) => (
+            <div key={idx} className="flex gap-2 items-end bg-gray-50 dark:bg-gray-800 p-3 rounded border mb-2">
+              <div className="flex-1">
+                <label className="text-xs text-gray-500 mb-1 block">Label Name</label>
+                <input className="input-field py-1" value={link.label} onChange={(e) => updateCustomLink(idx, 'label', e.target.value)} placeholder="e.g. Custom Label" />
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-gray-500 mb-1 block">Link URL</label>
+                <input type="url" className="input-field py-1" value={link.url} onChange={(e) => updateCustomLink(idx, 'url', e.target.value)} placeholder="https://example.com" />
+              </div>
+              <button type="button" className="btn-danger p-2 h-[38px] w-[38px] flex items-center justify-center border border-red-200" onClick={() => removeCustomLink(idx)}>
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+          <button type="button" className="text-sm text-indigo-600 font-medium flex items-center hover:text-indigo-700" onClick={addCustomLink}>
+            <Plus size={14} className="mr-1" /> Add another link
+          </button>
         </div>
       </Section>
 
@@ -229,7 +211,7 @@ export const ResumeForm = () => {
             </div>
             <div className="input-group">
               <label className="input-label">Degree / Certificate</label>
-              <input className="input-field" value={edu.degree} onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)} placeholder="B.Tech in Computer Science" />
+              <input className="input-field" value={edu.degree} onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)} placeholder={idx === 0 ? "10th" : idx === 1 ? "12th" : idx === 2 ? "BTech in Computer Science" : "B.Tech in Computer Science"} />
             </div>
             <div className="input-row">
               <div className="input-group">
@@ -349,7 +331,6 @@ export const ResumeForm = () => {
                 placeholder="A short description..."
                 rows={2}
               />
-              <AIFeedback text={proj.description} />
             </div>
           </div>
         )})}
@@ -403,7 +384,6 @@ export const ResumeForm = () => {
                       placeholder={`Bullet point ${bidx + 1}`}
                       rows={2}
                     />
-                    <AIFeedback text={bp} />
                   </div>
                 )
               ))}

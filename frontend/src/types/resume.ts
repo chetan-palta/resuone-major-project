@@ -8,6 +8,7 @@ export interface PersonalDetails {
   portfolio: string;
   location: string;
   targetRole?: string;
+  customLinks?: { label: string; url: string }[];
 }
 
 export interface Education {
@@ -59,6 +60,7 @@ export interface Certification {
 
 export interface ResumeData {
   id?: string;
+  resumeName?: string;
   personalDetails: PersonalDetails;
   summary: string;
   education: Education[];

@@ -20,7 +20,11 @@ export const Auth = () => {
         credential: credentialResponse.credential
       });
       login(res.data.user);
-      navigate('/dashboard');
+      if (res.data.user.email === 'admin@resuone.com') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError('Google authentication failed');
     }
@@ -34,7 +38,11 @@ export const Auth = () => {
       const payload = isLogin ? { email, password } : { name, email, password };
       const res = await axios.post(`http://localhost:5000${endpoint}`, payload);
       login(res.data.user);
-      navigate('/dashboard');
+      if (res.data.user.email === 'admin@resuone.com') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Authentication failed');
     }

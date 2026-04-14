@@ -18,7 +18,28 @@ const MainApp = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const validateExtraCurricular = () => {
+    for (let i = 0; i < data.extraCurricular.length; i++) {
+      const words = data.extraCurricular[i].trim().split(/\s+/).filter(Boolean).length;
+      if (words > 15) {
+        alert('Validation Error: Each Extra Curricular line must be maximum 15 words.');
+        return false;
+      }
+    }
+    const noEmptyECs = data.extraCurricular.filter(e => e.trim().length > 0);
+    if (noEmptyECs.length > 3) {
+      alert('Validation Error: Maximum 3 Extra Curricular entries allowed.');
+      return false;
+    }
+    if (data.certifications && data.certifications.length > 2) {
+      alert('Validation Error: Maximum 2 Certificates allowed.');
+      return false;
+    }
+    return true;
+  };
+
   const handleExport = async () => {
+    if (!validateExtraCurricular()) return;
     setIsExporting(true);
     try {
       if (data.id) {
@@ -51,6 +72,7 @@ const MainApp = () => {
   };
 
   const handleSaveResume = async () => {
+    if (!validateExtraCurricular()) return;
     try {
       setIsSaving(true);
       const suggestedName = data.resumeName || (data.personalDetails?.fullName ? `${data.personalDetails.fullName} Resume` : 'Untitled Resume');

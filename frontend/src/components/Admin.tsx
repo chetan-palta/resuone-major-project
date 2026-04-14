@@ -13,7 +13,7 @@ export const Admin = () => {
   const [filterBranch, setFilterBranch] = useState('');
   const [filterDate, setFilterDate] = useState('');
 
-  const [selectedResumeData, setSelectedResumeData] = useState<any>(null);
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
 
   useEffect(() => {
     // In a real scenario, checks if admin
@@ -86,7 +86,7 @@ export const Admin = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Account</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch/Degree</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Structured Data</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Final PDF</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -98,10 +98,10 @@ export const Admin = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(r.updated_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
-                      onClick={() => setSelectedResumeData(r.structured_data)}
+                      onClick={() => setSelectedResumeId(r.id)}
                       className="text-indigo-600 hover:text-indigo-900 flex items-center justify-end gap-1 w-full"
                     >
-                      <Eye size={16} /> View Data
+                      <Eye size={16} /> View PDF
                     </button>
                   </td>
                 </tr>
@@ -116,15 +116,32 @@ export const Admin = () => {
         </div>
       </div>
 
-      {selectedResumeData && (
+      {selectedResumeId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold">Structured Resume Data</h2>
-              <button onClick={() => setSelectedResumeData(null)} className="text-gray-500 hover:text-gray-900">Close</button>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+              <h2 className="text-xl font-bold">Resume PDF</h2>
+              <div className="flex gap-4 items-center">
+                <a 
+                  href={`http://localhost:5000/api/resumes/${selectedResumeId}/pdf`} 
+                  target="_blank"
+                  rel="noreferrer"
+                  download
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium"
+                >
+                  Download PDF
+                </a>
+                <button onClick={() => setSelectedResumeId(null)} className="text-gray-500 hover:text-gray-900 p-2 font-bold select-none text-xl">
+                  ×
+                </button>
+              </div>
             </div>
-            <div className="p-4 flex-1 overflow-auto bg-gray-50 text-sm font-mono whitespace-pre-wrap">
-              {JSON.stringify(selectedResumeData, null, 2)}
+            <div className="flex-1 bg-gray-100">
+              <iframe 
+                src={`http://localhost:5000/api/resumes/${selectedResumeId}/pdf`} 
+                className="w-full h-full border-none"
+                title="Resume PDF"
+              />
             </div>
           </div>
         </div>

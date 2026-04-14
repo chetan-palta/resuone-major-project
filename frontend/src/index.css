@@ -403,20 +403,22 @@ textarea.input-field {
 .resume-list {
   padding-left: 6mm;
   margin-top: 2px;
-  list-style-type: circle;
+  list-style-type: disc;
 }
 
 .resume-list li {
   margin-bottom: 2px;
-  text-align: justify;
+  text-align: left;
   font-size: 10.5pt;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .resume-skills-group {
   margin-bottom: 2px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 .resume-skill-label {

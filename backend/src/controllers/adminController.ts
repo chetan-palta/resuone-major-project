@@ -29,8 +29,31 @@ export const getAllResumes = async (req: Request, res: Response) => {
       // Safe extraction for branch / name from the structured resume
       const studentName = data?.personalDetails?.fullName || r.user_name || 'Unknown';
       let branch = 'Unknown';
-      if (data?.education && data.education.length > 0) {
-        branch = data.education[0].degree || 'Unknown';
+      if (data?.education && Array.isArray(data.education)) {
+        let validEdu = null;
+        if (data.education.length >= 3) {
+            const edu3 = data.education[2];
+            const deg = (edu3.degree || '').toLowerCase();
+            const inst = (edu3.institution || '').toLowerCase();
+            if (!deg.includes('10th') && !deg.includes('12th') && !inst.includes('school')) {
+                validEdu = edu3;
+            }
+        }
+        
+        if (!validEdu) {
+            validEdu = data.education.find((edu: any) => {
+               const deg = (edu.degree || '').toLowerCase();
+               const inst = (edu.institution || '').toLowerCase();
+               if (deg.includes('10th') || deg.includes('12th') || inst.includes('school')) return false;
+               return inst.includes('guru nanak dev') || inst.includes('college') || inst.includes('university') || inst.includes('institute') || deg.includes('bca') || deg.includes('btech') || deg.includes('bba');
+            });
+        }
+        
+        if (validEdu) {
+            branch = validEdu.degree || 'Unknown';
+        } else if (data.education.length > 0) {
+            branch = data.education[0].degree || 'Unknown';
+        }
       }
 
       return {

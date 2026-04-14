@@ -48,6 +48,11 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
               <a href={ensureHref(personalDetails.portfolio)} target="_blank" rel="noopener noreferrer">Portfolio</a>
             </span>
           )}
+          {personalDetails.customLinks && personalDetails.customLinks.map((link, i) => (
+            <span key={`custom-${i}`}>
+              {link.label} – <a href={ensureHref(link.url)} target="_blank" rel="noopener noreferrer">{link.url}</a>
+            </span>
+          ))}
           {personalDetails.location && <span>{personalDetails.location}</span>}
         </div>
       </div>
@@ -91,7 +96,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({ data }) => {
                   <span className="resume-item-subtitle" style={{ whiteSpace: 'nowrap', marginRight: '6px', fontWeight: 'bold' }}>
                     • {skill.name}:
                   </span>
-                  <span>{skill.items}</span>
+                  <span>{skill.items.split(',').map(s => s.trim()).filter(Boolean).join(', ')}</span>
                 </div>
               ))}
             </div>

@@ -1,7 +1,8 @@
 import nlp from 'compromise';
 import weakVerbsDict from './dictionaries/weakVerbs.json';
 
-const weakVerbsList = Object.keys(weakVerbsDict);
+const dict = weakVerbsDict as Record<string, string>;
+const weakVerbsList = Object.keys(dict);
 
 export interface ExperienceSuggestion {
   bulletIndex: number;
@@ -41,7 +42,7 @@ export const analyzeExperience = (bullets: string[]): ExperienceSuggestion[] => 
     weakVerbsList.forEach(weakVerb => {
       // Direct match
       if (doc.match(weakVerb).found) {
-        const strongAlternative = weakVerbsDict[weakVerb as keyof typeof weakVerbsDict];
+        const strongAlternative = dict[weakVerb];
         suggestions.push({
           bulletIndex: index,
           type: 'weak-verb',

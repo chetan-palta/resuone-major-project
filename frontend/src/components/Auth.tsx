@@ -4,6 +4,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { FileText } from 'lucide-react';
+import { API_URL } from '../config';
 
 export const Auth = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export const Auth = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/google', {
+      const res = await axios.post(`${API_URL}/api/auth/google`, {
         credential: credentialResponse.credential
       });
       login(res.data.user);
@@ -36,7 +37,7 @@ export const Auth = () => {
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
       const payload = isLogin ? { email, password } : { name, email, password };
-      const res = await axios.post(`http://localhost:5000${endpoint}`, payload);
+      const res = await axios.post(`${API_URL}${endpoint}`, payload);
       login(res.data.user);
       if (res.data.user.email === 'admin@resuone.com') {
         navigate('/admin');

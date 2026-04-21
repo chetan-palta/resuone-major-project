@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useResume } from '../context/ResumeContext';
 import { UploadCloud, File, AlertCircle, CheckCircle2, Loader2, X } from 'lucide-react';
+import { API_URL } from '../config';
 
 export const ResumeImport = () => {
   const { setResumeData } = useResume();
@@ -79,7 +80,7 @@ export const ResumeImport = () => {
     formData.append('resumeFile', file);
     
     try {
-      const response = await fetch('http://localhost:5000/api/resume/import', {
+      const response = await fetch(`${API_URL}/api/resume/import`, {
         method: 'POST',
         body: formData,
       });

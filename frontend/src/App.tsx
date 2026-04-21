@@ -10,6 +10,7 @@ import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 import { Admin } from './components/Admin';
 import axios from 'axios';
+import { API_URL } from './config';
 
 axios.defaults.withCredentials = true;
 
@@ -44,10 +45,10 @@ const MainApp = () => {
     try {
       if (data.id) {
         // Automatically save on export if logged in and managing a resume
-        await axios.post('http://localhost:5000/api/resumes', data);
+        await axios.post(`${API_URL}/api/resumes`, data);
       }
       
-      const response = await fetch('http://localhost:5000/api/resumes/export-direct', {
+      const response = await fetch(`${API_URL}/api/resumes/export-direct`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -83,7 +84,7 @@ const MainApp = () => {
       }
       
       const payload = { ...data, resumeName: customName };
-      const response = await axios.post('http://localhost:5000/api/resumes', payload);
+      const response = await axios.post(`${API_URL}/api/resumes`, payload);
       
       if (response.data.id) {
         setResumeData({ ...payload, id: response.data.id });
@@ -153,7 +154,7 @@ const RenderRoute = () => {
   useEffect(() => {
     const fetchResume = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/resumes/${id}`);
+        const res = await fetch(`${API_URL}/api/resumes/${id}`);
         if (!res.ok) throw new Error('Failed to fetch resume');
         const dbData = await res.json();
 

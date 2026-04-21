@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ReactNode } from 'react';
 import type { ResumeData } from '../types/resume';
 import { v4 as uuidv4 } from 'uuid';
+import { API_URL } from '../config';
 
 const STORAGE_KEY = 'resuone_form_data';
 
@@ -122,7 +123,7 @@ export const ResumeProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       setIsAnalyzing(true);
       try {
-        const response = await fetch('http://localhost:5000/api/ai/analyze', {
+        const response = await fetch(`${API_URL}/api/ai/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)

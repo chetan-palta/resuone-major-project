@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 axios.defaults.withCredentials = true;
 
@@ -32,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/auth/session');
+        const response = await axios.get(`${API_URL}/api/auth/session`);
         setUser(response.data.user);
       } catch (error) {
         setUser(null);
@@ -49,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await axios.post('http://localhost:5000/api/auth/logout');
+      await axios.post(`${API_URL}/api/auth/logout`);
     } catch (e) {}
     setUser(null);
   };

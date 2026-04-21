@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Edit2, Trash2, Download, FileText, LogOut, ArrowLeft } from 'lucide-react';
 import { useResume } from '../context/ResumeContext';
+import { API_URL } from '../config';
 
 interface ResumeMeta {
   id: string;
@@ -28,7 +29,7 @@ export const Dashboard = () => {
 
   const fetchResumes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/resumes');
+      const res = await axios.get(`${API_URL}/api/resumes`);
       setResumes(res.data.resumes || []);
     } catch (err) {
       console.error(err);
@@ -44,7 +45,7 @@ export const Dashboard = () => {
 
   const handleEdit = async (id: string) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/resumes/${id}`);
+      const res = await axios.get(`${API_URL}/api/resumes/${id}`);
       setResumeData(res.data);
       navigate('/resume?id=' + id);
     } catch (error) {
@@ -55,7 +56,7 @@ export const Dashboard = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this resume?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/resumes/${id}`);
+      await axios.delete(`${API_URL}/api/resumes/${id}`);
       setResumes(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       console.error(err);
@@ -65,7 +66,7 @@ export const Dashboard = () => {
 
   const handleDownload = async (id: string) => {
     try {
-      window.location.href = `http://localhost:5000/api/resumes/${id}/pdf`;
+      window.location.href = `${API_URL}/api/resumes/${id}/pdf`;
     } catch (err) {
       alert('Failed to generate PDF');
     }

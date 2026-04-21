@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useResume } from '../context/ResumeContext';
 import { ChevronDown, ChevronRight, Plus, Trash2, Target, Sparkles } from 'lucide-react';
 import { AIPanel } from './AIPanel';
+import { API_URL } from '../config';
 
 
 const SkillAutocomplete = ({ categoryName, currentItems, onSelect }: { categoryName: string, currentItems: string, onSelect: (items: string) => void }) => {
@@ -16,7 +17,7 @@ const SkillAutocomplete = ({ categoryName, currentItems, onSelect }: { categoryN
     const fetchSuggestions = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/ai/skills/autocomplete?category=${encodeURIComponent(categoryName)}`);
+        const res = await fetch(`${API_URL}/api/ai/skills/autocomplete?category=${encodeURIComponent(categoryName)}`);
         const data = await res.json();
         setSuggestions(data.suggestions || []);
       } catch (e) {

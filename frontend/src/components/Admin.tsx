@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, Eye } from 'lucide-react';
+import { API_URL } from '../config';
 
 export const Admin = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export const Admin = () => {
 
   const fetchAdminResumes = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/admin/resumes');
+      const res = await axios.get(`${API_URL}/api/admin/resumes`);
       setResumes(res.data.resumes || []);
       setFiltered(res.data.resumes || []);
     } catch (err) {
@@ -123,7 +124,7 @@ export const Admin = () => {
               <h2 className="text-xl font-bold">Resume PDF</h2>
               <div className="flex gap-4 items-center">
                 <a 
-                  href={`http://localhost:5000/api/resumes/${selectedResumeId}/pdf`} 
+                  href={`${API_URL}/api/resumes/${selectedResumeId}/pdf`} 
                   target="_blank"
                   rel="noreferrer"
                   download
@@ -138,7 +139,7 @@ export const Admin = () => {
             </div>
             <div className="flex-1 bg-gray-100">
               <iframe 
-                src={`http://localhost:5000/api/resumes/${selectedResumeId}/pdf`} 
+                src={`${API_URL}/api/resumes/${selectedResumeId}/pdf`} 
                 className="w-full h-full border-none"
                 title="Resume PDF"
               />

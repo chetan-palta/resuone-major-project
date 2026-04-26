@@ -9,6 +9,7 @@ import { ResumeImport } from './components/ResumeImport';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 import { Admin } from './components/Admin';
+import { useAuth } from './context/AuthContext';
 import axios from 'axios';
 import { API_URL } from './config';
 
@@ -16,8 +17,23 @@ axios.defaults.withCredentials = true;
 
 const MainApp = () => {
   const { data, clearSavedData, setResumeData } = useResume();
+  const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [autoLoaded, setAutoLoaded] = useState(false);
+
+  useEffect(() => {
+    if (user && !data.id && !autoLoaded) {
+      axios.get(`${API_URL}/api/resume/user`)
+        .then(res => {
+          if (res.data && res.data.id) {
+            setResumeData(res.data);
+          }
+          setAutoLoaded(true);
+        })
+        .catch(() => setAutoLoaded(true));
+    }
+  }, [user, data.id, autoLoaded, setResumeData]);
 
   const validateExtraCurricular = () => {
     for (let i = 0; i < data.extraCurricular.length; i++) {
@@ -84,7 +100,9 @@ const MainApp = () => {
       }
       
       const payload = { ...data, resumeName: customName };
-      const response = await axios.post(`${API_URL}/api/resumes`, payload);
+      const endpoint = data.id ? '/api/resume/update' : '/api/resume/save';
+      const method = data.id ? axios.put : axios.post;
+      const response = await method(`${API_URL}${endpoint}`, payload);
       
       if (response.data.id) {
         setResumeData({ ...payload, id: response.data.id });

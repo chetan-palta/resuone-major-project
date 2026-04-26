@@ -161,10 +161,11 @@ export const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-foreground mb-6">
-              Your Dream Job Starts With the{" "}
+              Build{" "}
               <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                Right Resume.
+                ATS-ready
               </span>
+              {" "}resume instantly
             </h1>
 
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">

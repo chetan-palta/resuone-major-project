@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { FileText } from 'lucide-react';
@@ -15,20 +14,8 @@ export const Auth = () => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      const res = await axios.post(`${API_URL}/api/auth/google`, {
-        credential: credentialResponse.credential
-      });
-      login(res.data.user);
-      if (res.data.user.email === 'admin@resuone.com') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (err: any) {
-      setError('Google authentication failed');
-    }
+  const handleGoogleLoginClick = () => {
+    window.location.href = `${API_URL}/api/auth/google/url`;
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -128,10 +115,13 @@ export const Auth = () => {
             </div>
 
             <div className="mt-6 flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setError('Google Authentication Failed')}
-              />
+              <button
+                type="button"
+                onClick={handleGoogleLoginClick}
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Sign in with Google
+              </button>
             </div>
           </div>
 

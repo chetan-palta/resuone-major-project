@@ -1,4 +1,16 @@
 {
+  "name": "resuone-major-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ResuOne resume management system",
+  "main": "start.js",
+  "scripts": {
+    "dev": "node start.js",
+    "start": "node start.js",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm install && npm run install:backend && npm run install:frontend"
+  },
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
     "cookie-parser": "^1.4.7",

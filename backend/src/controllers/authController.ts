@@ -5,7 +5,11 @@ import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import pool from '../config/db';
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  `${process.env.BASE_URL}/api/auth/google/callback`
+);
 
 const generateToken = (userId: string, email: string) => {
   return jwt.sign({ id: userId, email }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
@@ -14,8 +18,8 @@ const generateToken = (userId: string, email: string) => {
 const setSessionCookie = (res: Response, token: string) => {
   res.cookie('auth_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true, // Always true for cross-site 'none'
+    sameSite: 'none',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 };
@@ -61,6 +65,59 @@ export const googleLogin = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Google login error:', error);
     res.status(500).json({ error: 'Google authentication failed' });
+  }
+};
+
+export const googleAuthInitiate = (req: Request, res: Response) => {
+  const url = client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['email', 'profile'],
+    prompt: 'consent'
+  });
+  res.redirect(url);
+};
+
+export const googleAuthCallback = async (req: Request, res: Response) => {
+  const code = req.query.code as string;
+  if (!code) {
+    return res.redirect(`${process.env.FRONTEND_URL}/?error=google_auth_failed`);
+  }
+  
+  try {
+    const { tokens } = await client.getToken(code);
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error('Invalid token');
+
+    const { email, sub: googleId, name, picture: avatar } = payload;
+    
+    const [rows]: any = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    let user = rows[0];
+
+    if (!user) {
+      const id = randomUUID();
+      await pool.query(
+        'INSERT INTO users (id, google_id, email, name, avatar) VALUES (?, ?, ?, ?, ?)',
+        [id, googleId, email, name, avatar]
+      );
+      user = { id, email, name, avatar };
+    } else if (!user.google_id) {
+      await pool.query('UPDATE users SET google_id = ?, avatar = ? WHERE email = ?', [googleId, avatar, email]);
+      user.google_id = googleId;
+      user.avatar = avatar;
+    }
+
+    const token = generateToken(user.id, user.email);
+    setSessionCookie(res, token);
+    
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+  } catch (error) {
+    console.error('Google callback error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/?error=google_auth_failed`);
   }
 };
 
@@ -132,8 +189,8 @@ export const getSession = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
+    secure: true,
+    sameSite: 'none'
   });
   res.json({ message: 'Logged out successfully' });
 };
